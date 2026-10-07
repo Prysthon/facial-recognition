@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
-import numpy as np
 from deepface import DeepFace
+import numpy as np
 
 from reconhecimento_facial.settings import (
     AUTHORIZED_DIR,
