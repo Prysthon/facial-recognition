@@ -28,32 +28,26 @@ def _get_identity(identity_path: str) -> str:
     return Path(identity_path).parent.name
 
 
-def recognize_image(
-    image_path: Path,
-) -> tuple[np.ndarray, list[Recognition]]:
-    image = cv2.imread(str(image_path))
-
-    if image is None:
-        raise ValueError(f"Não foi possível abrir a imagem: {image_path}")
-
+def _recognize(
+    image_source: str | np.ndarray,
+    source_name: str,
+    verbose: bool = False,
+) -> list[Recognition]:
     try:
         detected_faces = DeepFace.extract_faces(
-            img_path=str(image_path),
+            img_path=image_source,
             detector_backend=DETECTOR_BACKEND,
             enforce_detection=True,
             align=True,
         )
     except ValueError:
-        print(f"  Nenhum rosto detectado em {image_path.name}")
-        return image, []
+        if verbose:
+            print(f"  Nenhum rosto detectado em {source_name}")
 
-    print(
-        f"  Rostos detectados em {image_path.name}: "
-        f"{len(detected_faces)}"
-    )
+        return []
 
     matches_by_face = DeepFace.find(
-        img_path=str(image_path),
+        img_path=image_source,
         db_path=str(AUTHORIZED_DIR),
         model_name=MODEL_NAME,
         detector_backend=DETECTOR_BACKEND,
@@ -79,11 +73,6 @@ def recognize_image(
             match_dataframe = matches_by_face[face_index]
 
         if match_dataframe is None or match_dataframe.empty:
-            print(
-                f"  Rosto {face_index + 1}: "
-                "nenhuma correspondência autorizada"
-            )
-
             recognitions.append(
                 Recognition(
                     x=x,
@@ -104,16 +93,16 @@ def recognize_image(
         distance = float(best_match["distance"])
         threshold = float(best_match["threshold"])
         identity = _get_identity(best_match["identity"])
-
         authorized = distance <= threshold
 
-        print(
-            f"  Rosto {face_index + 1}: "
-            f"candidato={identity}, "
-            f"distância={distance:.4f}, "
-            f"limite={threshold:.4f}, "
-            f"autorizado={authorized}"
-        )
+        if verbose:
+            print(
+                f"  Rosto {face_index + 1}: "
+                f"candidato={identity}, "
+                f"distância={distance:.4f}, "
+                f"limite={threshold:.4f}, "
+                f"autorizado={authorized}"
+            )
 
         recognitions.append(
             Recognition(
@@ -127,4 +116,31 @@ def recognize_image(
             )
         )
 
+    return recognitions
+
+
+def recognize_image(
+    image_path: Path,
+) -> tuple[np.ndarray, list[Recognition]]:
+    image = cv2.imread(str(image_path))
+
+    if image is None:
+        raise ValueError(f"Não foi possível abrir: {image_path}")
+
+    recognitions = _recognize(
+        image_source=str(image_path),
+        source_name=image_path.name,
+        verbose=True,
+    )
+
     return image, recognitions
+
+
+def recognize_frame(
+    frame: np.ndarray,
+) -> list[Recognition]:
+    return _recognize(
+        image_source=frame,
+        source_name="câmera",
+        verbose=False,
+    )
