@@ -16,9 +16,10 @@ classifiers = [
     
 ]
 dependencies = [
-    "deepface>=0.0.101",
+    "deepface[tensorflow]>=0.0.101",
     "ipython",
     "jupyterlab",
+    "keras>=3.15.1",
     "loguru",
     "matplotlib",
     "notebook",
@@ -29,6 +30,8 @@ dependencies = [
     "python-dotenv",
     "ruff",
     "scikit-learn",
+    "tensorflow>=2.21.0",
+    "tf-keras>=2.21.0",
     "tqdm",
     "typer",
 ]
